@@ -99,12 +99,21 @@ jobs:
   #          (only runs after steps 1, 2, 3 pass)
   # ========================================
 
+  secret-scan:
+    name: Secret Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scan source for secrets
+        run: docker run --rm -v "$PWD:/workspace:ro" aquasec/trivy:latest fs --scanners secret --exit-code 1 /workspace
+
   docker-build:
     name: Docker Build
     needs:
       - test
       - sast
       - sca
+      - secret-scan
     runs-on: ubuntu-latest
 
     steps:
@@ -147,7 +156,7 @@ jobs:
 
       - name: Scan image
         run: |
-          trivy image --severity HIGH,CRITICAL session17-python:${{ github.sha }}
+          trivy image --ignore-unfixed=false --config trivy.yaml session17-python:${{ github.sha }}
 
 
   # ========================================
@@ -218,7 +227,7 @@ jobs:
 
       - name: Check rollout status
         run: |
-          kubectl rollout status deployment/session17-python --timeout=60s
+          kubectl rollout status deployment/session17-python --timeout=180s
 
       - name: Test running website in CI (Curl)
         run: |
