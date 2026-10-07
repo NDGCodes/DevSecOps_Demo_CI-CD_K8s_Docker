@@ -145,18 +145,15 @@ jobs:
         run: |
           docker build -t session17-python:${{ github.sha }} .
 
-      - name: Install Trivy
-        run: |
-          sudo apt-get install -y wget
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key \
-            | sudo gpg --dearmor -o /usr/share/keyrings/trivy.gpg
-          echo "deb [signed-by=/usr/share/keyrings/trivy.gpg] https://aquasecurity.github.io/trivy-repo/deb generic main" \
-            | sudo tee /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update && sudo apt-get install -y trivy
-
       - name: Scan image
-        run: |
-          trivy image --ignore-unfixed=false --config trivy.yaml session17-python:${{ github.sha }}
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: session17-python:${{ github.sha }}
+          trivy-config: trivy.yaml
+          severity: HIGH,CRITICAL
+          ignore-unfixed: false
+          exit-code: '1'
+
 
 
   # ========================================
